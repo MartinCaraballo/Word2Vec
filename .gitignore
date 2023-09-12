@@ -1,0 +1,5 @@
+# Environment folder of proyect.
+/venv
+
+#.idea folder
+/.idea
