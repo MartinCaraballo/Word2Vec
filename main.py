@@ -53,6 +53,11 @@ if __name__ == '__main__':
     weights = word2vec.get_layer('w2v_embedding').get_weights()[0]
     vocab = vectorize_layer.get_vocabulary()
 
+    word2id_vocab = word2id_dicc(vocab)
+
+    word = 'king'
+    print(f'Similar to {word}: {get_similar_words(word, word2id_vocab, vocab, weights, 20)}')
+
     # export_to_tsv('vectors.tsv', 'metadata.tsv', vocab, weights)
 
 

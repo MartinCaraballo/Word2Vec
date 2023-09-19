@@ -4,6 +4,7 @@ from keras import layers
 import re
 import string
 import io
+import numpy as np
 
 
 # BASADO EN EL EJEMPLO DE TENSORFLOW: https://www.tensorflow.org/text/tutorials/word2vec#embedding_lookup_and_analysis
@@ -146,6 +147,31 @@ def performance_config(autotune, batch_size, buffer_size, targets, contexts, lab
     print(dataset)
 
     return dataset
+
+
+def word2id_dicc(vocab):
+    id2word = {}
+    for index, word in enumerate(vocab):
+        id2word[word] = index
+
+    return id2word
+
+
+def get_similar_words(word, word2id_vocab, id2word_vocab, weights, number_of_words=10):
+    word_id = word2id_vocab[word]
+    if word_id is None:
+        return f'{word} not found.'
+
+    word_vec = weights[word_id]
+    similarities = []
+
+    for other_word in id2word_vocab:
+        if other_word is not word:
+            other_word_vec = weights[word2id_vocab[other_word]]
+            sim_val = np.dot(word_vec, other_word_vec) / (np.linalg.norm(word_vec) * np.linalg.norm(other_word_vec))
+            if sim_val > 0.2: similarities.append((other_word, sim_val))
+
+    return sorted(similarities, key=lambda x: x[1], reverse=True)[0:number_of_words]
 
 
 def export_to_tsv(vectors_file_path, metadata_file_path, vocab, weights):
