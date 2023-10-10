@@ -157,41 +157,61 @@ def word2id_dicc(vocab):
     return id2word
 
 
-def get_similar_words(word, word2id_vocab, id2word_vocab, weights, number_of_words=10):
-    word_id = word2id_vocab[word]
-    if word_id is None:
-        return f'{word} not found.'
-
-    word_vec = weights[word_id]
-    similarities = []
-
-    for other_word in id2word_vocab:
-        if other_word is not word:
-            other_word_vec = weights[word2id_vocab[other_word]]
-            sim_val = np.dot(word_vec, other_word_vec) / (np.linalg.norm(word_vec) * np.linalg.norm(other_word_vec))
-            if sim_val > 0.2: similarities.append((other_word, sim_val))
-
-    return sorted(similarities, key=lambda x: x[1], reverse=True)[0:number_of_words]
+def sim_between_two_vectors(vector1, vector2):
+    return np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
 
 
-def export_to_tsv(vectors_file_path, metadata_file_path, vocab, weights):
-    """
-    Exports the model to tsv files, that can be open at 'Embedding Projector':
-    https://projector.tensorflow.org/?_gl=1*17jl0e0*_ga*MTY4ODgzNTc0My4xNjk1MDg0ODA4*_ga_W0YLR4190T*MTY5NTA4NDgwOC4xLjEuMTY5NTA4Nzc3MS4wLjAuMA..
-    :param vectors_file_path:
-    :param metadata_file_path:
-    :param vocab: model vocabulary dictionary
-    :param weights: words vectors dictionary
-    :return:
-    """
-    out_v = io.open(vectors_file_path, 'w', encoding='utf-8')
-    out_m = io.open(metadata_file_path, 'w', encoding='utf-8')
+class Word2VecOperations:
+    def __init__(self, vocab, word2id_vocab, weights):
+        self.vocab = vocab
+        self.word2id_vocab = word2id_vocab
+        self.weights = weights
 
-    for index, word in enumerate(vocab):
-        if index == 0:
-            continue  # skip 0, it's padding.
-        vec = weights[index]
-        out_v.write('\t'.join([str(x) for x in vec]) + "\n")
-        out_m.write(word + "\n")
-    out_v.close()
-    out_m.close()
+    def get_similar_words(self, word, number_of_words=10):
+        word_id = self.word2id_vocab[word]
+        if word_id is None:
+            return f'{word} not found.'
+
+        word_vec = self.weights[word_id]
+        similarities = []
+
+        for other_word in self.vocab:
+            if other_word is not word:
+                other_word_vec = self.weights[self.word2id_vocab[other_word]]
+                sim_val = np.dot(word_vec, other_word_vec) / (np.linalg.norm(word_vec) * np.linalg.norm(other_word_vec))
+                if sim_val > 0.2: similarities.append((other_word, sim_val))
+
+        return sorted(similarities, key=lambda x: x[1], reverse=True)[0:number_of_words]
+
+    def vector_calculation(self, word1, word2, word3):
+        vector_word1 = self.get_vector_of_word(word1)
+        vector_word2 = self.get_vector_of_word(word2)
+        vector_word3 = self.get_vector_of_word(word3)
+
+        vector_result = vector_word1 - vector_word2 + vector_word3
+
+        return vector_result
+
+    def get_vector_of_word(self, word):
+        id_word = self.word2id_vocab[word]
+        word_vector = self.weights[id_word]
+        return word_vector
+
+    def export_to_tsv(self, vectors_file_path, metadata_file_path):
+        """
+        Exports the model to tsv files, that can be open at 'Embedding Projector':
+        https://projector.tensorflow.org/?_gl=1*17jl0e0*_ga*MTY4ODgzNTc0My4xNjk1MDg0ODA4*_ga_W0YLR4190T*MTY5NTA4NDgwOC4xLjEuMTY5NTA4Nzc3MS4wLjAuMA..
+        :param vectors_file_path:
+        :param metadata_file_path:
+        """
+        out_v = io.open(vectors_file_path, 'w', encoding='utf-8')
+        out_m = io.open(metadata_file_path, 'w', encoding='utf-8')
+
+        for index, word in enumerate(self.vocab):
+            if index == 0:
+                continue  # skip 0, it's padding.
+            vec = self.weights[index]
+            out_v.write('\t'.join([str(x) for x in vec]) + "\n")
+            out_m.write(word + "\n")
+        out_v.close()
+        out_m.close()

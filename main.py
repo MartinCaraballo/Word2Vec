@@ -11,15 +11,15 @@ if __name__ == '__main__':
                                    )
 
     # Define the vocabulary size and the number of words in a sequence.
-    vocab_size = 4096
+    vocab_size = 10000
     sequence_length = 10
 
     vectorize_layer, inverse_vocab, sequences = vectorize_sentences(training_file, vocab_size, sequence_length, AUTOTUNE)
 
     targets, contexts, labels = generate_training_data(
         sequences=sequences,
-        window_size=2,
-        num_ns=4,
+        window_size=3,
+        num_ns=5,
         vocab_size=vocab_size,
         seed=SEED
     )
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     dataset = performance_config(AUTOTUNE, BATCH_SIZE, BUFFER_SIZE, targets, contexts, labels)
 
     # Building model
-    embedding_dim = 128
+    embedding_dim = 200
     word2vec = Word2Vec(vocab_size, embedding_dim, 4)
     word2vec.compile(optimizer='adam',
                      loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
@@ -55,9 +55,15 @@ if __name__ == '__main__':
 
     word2id_vocab = word2id_dicc(vocab)
 
-    word = 'king'
-    print(f'Similar to {word}: {get_similar_words(word, word2id_vocab, vocab, weights, 20)}')
+    word2vec_operations = Word2VecOperations(vocab, word2id_vocab, weights)
 
-    # export_to_tsv('vectors.tsv', 'metadata.tsv', vocab, weights)
+    word = 'king'
+    print(f'Similar to {word}: {word2vec_operations.get_similar_words(word, 20)}')
+
+    vector1 = word2vec_operations.get_vector_of_word("kingdom")
+    vector2 = word2vec_operations.get_vector_of_word("king")
+    print(f'Result of king - man + women = queen: {sim_between_two_vectors(vector1, vector2)}')
+
+    #word2vec_operations.export_to_tsv('vectors.tsv', 'metadata.tsv')
 
 
